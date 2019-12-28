@@ -24,6 +24,12 @@ public class Applic_XML
                     "COMMENT", "DOCUMENT", "DOCUMENT_TYPE",
                     "DOCUMENT_FRAGMENT", "NOTATION"};
 
+    private int occupNord = 0;
+    private int occupEst = 0;
+    private int occupSud = 0;
+    private int occupOuest = 0;
+
+
     private JPanel defaultPanel;
     private JButton buttonCreateKitchen;
     private JLabel labelLongueurX;
@@ -160,15 +166,22 @@ public class Applic_XML
         jtfModelPorte.setText("model123");
         JTextField jtfNomNouvComp = new JTextField();
         jtfNomNouvComp.setText("meuble");
+        JTextField jtfElecType = new JTextField();
+        jtfElecType.setText("frigo");
+        JTextField jtfElecMarque = new JTextField();
+        jtfElecMarque.setText("samsung");
+        JTextField jtfElecModele = new JTextField();
+        jtfElecModele.setText("HyperFreezer3000");
+        JTextField jtfElecEngClass = new JTextField();
+        jtfElecEngClass.setText("B");
+        JTextField jtfElecNumSerie = new JTextField();
+        jtfElecNumSerie.setText("20-123456-01");
 
         try
         {
             switch (type_elem)
             {
                 case "meuble":
-                    // IF meuble :
-                    // essence bois
-                    ///TODO: SOIT teinte_melaminé ?
 
                     panel.add(new JLabel("Essence du bois :"));
                     panel.add(jtfEssBois);
@@ -183,6 +196,13 @@ public class Applic_XML
                         String dimx = jtfDimX.getText();
                         String dimy = jtfDimY.getText();
                         String dimz = jtfDimZ.getText();
+
+                        // vérifcation depassement mur
+                        if(!dimx.equals("") && depasseMurAxeX(dimx, cote_cuisine))
+                        {
+                            infoBox("Attention ! La longueur depasse le mur (cote " + cote_cuisine + "). Veuillez choisir une taille plus petite", "Erreur");
+                            return;
+                        }
 
                         Element el = documentCree.createElement(type_elem);
 
@@ -208,6 +228,107 @@ public class Applic_XML
                     break;
 
                 case "armoire":
+                    panel.add(new JLabel("Essence du bois :"));
+                    panel.add(jtfEssBois);
+                    panel.add(new JLabel("Teinte bois :"));
+                    panel.add(jtfTeinMel);
+                    panel.add(new JLabel("Nombre lignes :"));
+                    panel.add(jtfNbLig);
+                    panel.add(new JLabel("Nombre colonnes :"));
+                    panel.add(jtfNbCol);
+                    panel.add(new JLabel("Dim X etageres :"));
+                    panel.add(jtfDimXpart);
+                    panel.add(new JLabel("Dim Y etageres :"));
+                    panel.add(jtfDimYpart);
+                    panel.add(new JLabel("Dim Z etageres :"));
+                    panel.add(jtfDimZpart);
+                    panel.add(new JLabel("Armoire a-t-elle des portes ? (oui/non) :"));
+                    panel.add(jtfHasPorte);
+                    panel.add(new JLabel("Si oui, quel est son modele ?"));
+                    panel.add(jtfModelPorte);
+
+
+                    int resultA = JOptionPane.showConfirmDialog(null, panel, "Ajout d'un element",
+                            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+                    if (resultA == JOptionPane.OK_OPTION)
+                    {
+                        String dimx = jtfDimX.getText();
+                        String dimy = jtfDimY.getText();
+                        String dimz = jtfDimZ.getText();
+
+                        // vérifcation depassement mur
+                        if(!dimx.equals("") && depasseMurAxeX(dimx, cote_cuisine))
+                        {
+                            infoBox("Attention ! La longueur depasse le mur (cote " + cote_cuisine + "). Veuillez choisir une taille plus petite", "Erreur");
+                            return;
+                        }
+
+                        Element el = documentCree.createElement(type_elem);
+
+                        el.setAttribute("dimx", dimx);
+                        el.setAttribute("dimy", dimy);
+                        el.setAttribute("dimz", dimz);
+
+                        Element el_ess_bois = documentCree.createElement("essence_bois");
+                        Text eltxt_ess_bois = documentCree.createTextNode(jtfEssBois.getText());
+                        Element el_tein_bois = documentCree.createElement("teinte_bois");
+                        Text eltxt_tein_bois = documentCree.createTextNode(jtfTeinMel.getText());
+                        Element el_nb_lig = documentCree.createElement("nblig");
+                        Text eltxt_nb_lig = documentCree.createTextNode(jtfNbLig.getText());
+                        Element el_nb_col = documentCree.createElement("nbcol");
+                        Text eltxt_nb_col = documentCree.createTextNode(jtfNbCol.getText());
+                        Element el_hasporte = documentCree.createElement("has_porte");
+                        Text eltxt_hasporte = documentCree.createTextNode(jtfHasPorte.getText());
+
+
+                        // On assume que la taille de toutes les parties/tiroirs est la meme ! (simplification)
+                        // composer dom
+                        Element cote = (Element) lesNoeuds.get(cote_cuisine);
+                        cote.appendChild(el);
+                        el.appendChild(el_nb_lig);
+                        el_nb_lig.appendChild(eltxt_nb_lig);
+                        el.appendChild(el_nb_col);
+                        el_nb_col.appendChild(eltxt_nb_col);
+                        el.appendChild(el_ess_bois);
+                        el_ess_bois.appendChild(eltxt_ess_bois);
+                        el.appendChild(el_tein_bois);
+                        el_tein_bois.appendChild(eltxt_tein_bois);
+                        el.appendChild(el_hasporte);
+                        el_hasporte.appendChild(eltxt_hasporte);
+
+                        if(jtfHasPorte.getText().equals("oui"))
+                        {
+                            Element el_modelporte = documentCree.createElement("model_porte");
+                            Text eltxt_modelporte = documentCree.createTextNode(jtfModelPorte.getText());
+                            el.appendChild(el_modelporte);
+                            el_modelporte.appendChild(eltxt_modelporte);
+                        }
+
+                        // BOUCLE : pour chaque ligne, chaque colonne
+                        for (int i = 0; i < Integer.parseInt(jtfNbLig.getText()); i++)
+                        {
+                            // ajout <lig>
+                            Element lig = documentCree.createElement("lig");
+                            el.appendChild(lig);
+
+                            for (int j = 0; j < Integer.parseInt(jtfNbCol.getText()); j++)
+                            {
+                                //ajout <col>
+                                Element col = documentCree.createElement("col");
+
+                                Element el_etagere = documentCree.createElement("etagere");
+
+                                el_etagere.setAttribute("dimx", jtfDimXpart.getText());
+                                el_etagere.setAttribute("dimy", jtfDimYpart.getText());
+                                el_etagere.setAttribute("dimz", jtfDimZpart.getText());
+
+                                lig.appendChild(col);
+                                col.appendChild(el_etagere);
+
+                            }
+                        }
+
+                    }
 
                     break;
                 case "meuble_tiroirs":
@@ -234,6 +355,13 @@ public class Applic_XML
                         String dimx = jtfDimX.getText();
                         String dimy = jtfDimY.getText();
                         String dimz = jtfDimZ.getText();
+
+                        // vérifcation depassement mur
+                        if(!dimx.equals("") && depasseMurAxeX(dimx, cote_cuisine))
+                        {
+                            infoBox("Attention ! La longueur depasse le mur (cote " + cote_cuisine + "). Veuillez choisir une taille plus petite", "Erreur");
+                            return;
+                        }
 
 
                         Element el = documentCree.createElement(type_elem);
@@ -323,6 +451,13 @@ public class Applic_XML
                         String dimy = jtfDimY.getText();
                         String dimz = jtfDimZ.getText();
 
+                        // vérifcation depassement mur
+                        if(!dimx.equals("") && depasseMurAxeX(dimx, cote_cuisine))
+                        {
+                            infoBox("Attention ! La longueur depasse le mur (cote " + cote_cuisine + "). Veuillez choisir une taille plus petite", "Erreur");
+                            return;
+                        }
+
                         Element el = documentCree.createElement(type_elem);
 
                         el.setAttribute("dimx", dimx);
@@ -405,8 +540,94 @@ public class Applic_XML
                     break;
                 case "electro":
 
+
+                    panel.add(new JLabel("Type electromenager :"));
+                    panel.add(jtfElecType);
+                    panel.add(new JLabel("Marque :"));
+                    panel.add(jtfElecMarque);
+                    panel.add(new JLabel("Modele :"));
+                    panel.add(jtfElecModele);
+                    panel.add(new JLabel("Energy Class :"));
+                    panel.add(jtfElecEngClass);
+                    panel.add(new JLabel("Serial Number :"));
+                    panel.add(jtfElecNumSerie);
+
+                    int resultE = JOptionPane.showConfirmDialog(null, panel, "Ajout d'un element electromenager",
+                            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+                    if (resultE == JOptionPane.OK_OPTION)
+                    {
+
+                        String dimx = jtfDimX.getText();
+                        String dimy = jtfDimY.getText();
+                        String dimz = jtfDimZ.getText();
+
+                        // vérifcation depassement mur
+                        if(!dimx.equals("") && depasseMurAxeX(dimx, cote_cuisine))
+                        {
+                            infoBox("Attention ! La longueur depasse le mur (cote " + cote_cuisine + "). Veuillez choisir une taille plus petite", "Erreur");
+                            return;
+                        }
+
+                        Element el = documentCree.createElement(type_elem);
+
+                        el.setAttribute("dimx", dimx);
+                        el.setAttribute("dimy", dimy);
+                        el.setAttribute("dimz", dimz);
+
+                        Element el_electr_type = documentCree.createElement("electro_type");
+                        Text eltxt_electr_type = documentCree.createTextNode(jtfElecType.getText());
+                        Element el_electr_marque = documentCree.createElement("electro_maque");
+                        Text eltxt_electr_marque = documentCree.createTextNode(jtfElecMarque.getText());
+                        Element el_electr_modele = documentCree.createElement("electro_modele");
+                        Text eltxt_electr_modele = documentCree.createTextNode(jtfElecModele.getText());
+                        Element el_electr_class_eng = documentCree.createElement("electro_class_eng");
+                        Text eltxt_electr_class_eng = documentCree.createTextNode(jtfElecEngClass.getText());
+                        Element el_electr_num_ser = documentCree.createElement("electro_num_ser");
+                        Text eltxt_electr_num_ser = documentCree.createTextNode(jtfElecNumSerie.getText());
+
+
+                        // composer dom
+                        Element cote = (Element) lesNoeuds.get(cote_cuisine);
+                        cote.appendChild(el);
+                        el.appendChild(el_electr_type);
+                        el_electr_type.appendChild(eltxt_electr_type);
+                        el.appendChild(el_electr_marque);
+                        el_electr_marque.appendChild(eltxt_electr_marque);
+                        el.appendChild(el_electr_modele);
+                        el_electr_modele.appendChild(eltxt_electr_modele);
+                        el.appendChild(el_electr_class_eng);
+                        el_electr_class_eng.appendChild(eltxt_electr_class_eng);
+                        el.appendChild(el_electr_num_ser);
+                        el_electr_num_ser.appendChild(eltxt_electr_num_ser);
+
+                    }
                     break;
                 case "vide":
+
+                    jtfDimY.setEnabled(false);
+                    jtfDimZ.setEnabled(false);
+
+                    int resultV = JOptionPane.showConfirmDialog(null, panel, "Ajout d'un element",
+                            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+                    if (resultV == JOptionPane.OK_OPTION)
+                    {
+                        String dimx = jtfDimX.getText();
+
+                        // vérifcation depassement mur
+                        if(!dimx.equals("") && depasseMurAxeX(dimx, cote_cuisine))
+                        {
+                            infoBox("Attention ! La longueur depasse le mur (cote " + cote_cuisine + "). Veuillez choisir une taille plus petite", "Erreur");
+                            return;
+                        }
+
+                        Element el = documentCree.createElement(type_elem);
+
+                        el.setAttribute("dimx", dimx);
+
+                        // composer dom
+                        Element cote = (Element) lesNoeuds.get(cote_cuisine);
+                        cote.appendChild(el);
+                    }
 
                     break;
                 default:
@@ -424,6 +645,57 @@ public class Applic_XML
 
 
 
+    }
+
+    private boolean depasseMurAxeX(String dimx, String cote_cuisine) {
+        boolean result = false;
+
+        switch(cote_cuisine)
+        {
+            case "nord" :
+                occupNord += Integer.parseInt(dimx);
+
+                if(occupNord > Integer.parseInt(labelLongueurX.getText()))
+                {
+                    result = true;
+                    occupNord -= Integer.parseInt(dimx);
+                }
+
+                break;
+            case "sud" :
+                occupSud += Integer.parseInt(dimx);
+
+                if(occupSud > Integer.parseInt(labelLongueurX.getText()))
+                {
+                    result = true;
+                    occupSud -= Integer.parseInt(dimx);
+                }
+
+                break;
+            case "est" :
+                occupEst += Integer.parseInt(dimx);
+
+                if(occupEst > Integer.parseInt(labelLargeurY.getText()))
+                {
+                    result = true;
+                    occupEst -= Integer.parseInt(dimx);
+                }
+
+                break;
+            case "ouest" :
+                occupOuest += Integer.parseInt(dimx);
+
+                if(occupOuest > Integer.parseInt(labelLargeurY.getText()))
+                {
+                    result = true;
+                    occupOuest -= Integer.parseInt(dimx);
+                }
+
+                break;
+        }
+
+
+        return result;
     }
 
 
